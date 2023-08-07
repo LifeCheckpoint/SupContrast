@@ -85,11 +85,12 @@ def set_optimizer(opt, model):
 
 def save_model(model, optimizer, opt, epoch, save_file):
     print('==> Saving...')
-    state = {
-        'opt': opt,
-        'model': model.state_dict(),
-        'optimizer': optimizer.state_dict(),
-        'epoch': epoch,
-    }
-    torch.save(state, save_file)
-    del state
+    # state = {
+    #     'opt': opt,
+    #     'model': model.state_dict(),
+    #     'optimizer': optimizer.state_dict(),
+    #     'epoch': epoch,
+    # }
+    # torch.save(state, save_file)
+    # del state
+    torch.save(model, save_file)

@@ -144,12 +144,13 @@ def set_loader(opt):
     normalize = transforms.Normalize(mean=mean, std=std)
 
     train_transform = transforms.Compose([
-        transforms.RandomResizedCrop(size=opt.size, scale=(0.2, 1.)),
+        transforms.RandomResizedCrop(size = opt.size, scale=(0.2, 1.)),
         transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(20),
+        transforms.RandomAffine(20),
         transforms.RandomApply([
-            transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)
+            transforms.ColorJitter(0.4, 0.1, 0, 0)
         ], p=0.8),
-        transforms.RandomGrayscale(p=0.2),
         transforms.ToTensor(),
         normalize,
     ])
