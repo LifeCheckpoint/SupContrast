@@ -166,7 +166,7 @@ class LinearClassifier(nn.Module):
 
 class SupConResNet(nn.Module):
     """backbone + projection head"""
-    def __init__(self, name='resnet50', head='mlp', feat_dim=128):
+    def __init__(self, name='resnet50', head='mlp', feat_dim=192):
         super(SupConResNet, self).__init__()
         model_fun, dim_in = model_dict[name]
         if USE_PRETRAINED_MODEL:
