@@ -7,7 +7,10 @@ Adapted from: https://github.com/bearpaw/pytorch-classification
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision
 
+USE_PRETRAINED_MODEL = True
+PRETRAINED_MODEL = "101"
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -123,30 +126,20 @@ class ResNet(nn.Module):
         out = torch.flatten(out, 1)
         return out
 
-
 def resnet18(**kwargs):
     return ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
-
-
 def resnet34(**kwargs):
     return ResNet(BasicBlock, [3, 4, 6, 3], **kwargs)
-
-
 def resnet50(**kwargs):
     return ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
-
-
 def resnet101(**kwargs):
     return ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
-
-
 model_dict = {
     'resnet18': [resnet18, 512],
     'resnet34': [resnet34, 512],
     'resnet50': [resnet50, 2048],
     'resnet101': [resnet101, 2048],
 }
-
 
 class LinearBatchNorm(nn.Module):
     """Implements BatchNorm1d by BatchNorm2d, for SyncBN purpose"""
@@ -161,13 +154,40 @@ class LinearBatchNorm(nn.Module):
         x = x.view(-1, self.dim)
         return x
 
+class LinearClassifier(nn.Module):
+    """Linear classifier"""
+    def __init__(self, name='resnet50', num_classes=10):
+        super(LinearClassifier, self).__init__()
+        _, feat_dim = model_dict[name]
+        self.fc = nn.Linear(feat_dim, num_classes)
+
+    def forward(self, features):
+        return self.fc(features)
 
 class SupConResNet(nn.Module):
     """backbone + projection head"""
     def __init__(self, name='resnet50', head='mlp', feat_dim=128):
         super(SupConResNet, self).__init__()
         model_fun, dim_in = model_dict[name]
-        self.encoder = model_fun()
+        if USE_PRETRAINED_MODEL:
+            if PRETRAINED_MODEL == "18":
+                model=torchvision.models.resnet18(pretrained=True)
+            if PRETRAINED_MODEL == "34":
+                model=torchvision.models.resnet34(pretrained=True)
+            if PRETRAINED_MODEL == "50":
+                model=torchvision.models.resnet50(pretrained=True)
+            if PRETRAINED_MODEL == "101":
+                model=torchvision.models.resnet101(pretrained=True)
+            if PRETRAINED_MODEL == "152":
+                model=torchvision.models.resnet152(pretrained=True)
+
+            num_features=model.fc.in_features
+            model.fc = nn.Linear(num_features, num_features)
+            self.fc2 = nn.Linear(num_features, feat_dim)
+            self.encoder = model
+        else:
+            self.encoder = model_fun()
+        
         if head == 'linear':
             self.head = nn.Linear(dim_in, feat_dim)
         elif head == 'mlp':
@@ -182,9 +202,13 @@ class SupConResNet(nn.Module):
 
     def forward(self, x):
         feat = self.encoder(x)
-        feat = F.normalize(self.head(feat), dim=1)
+#         print(feat.shape)
+        if USE_PRETRAINED_MODEL == False:
+            feat = F.normalize(self.head(feat), dim = 1)
+        else:
+            feat = F.normalize(self.fc2(feat), dim = 1)
+#         print(feat.shape)
         return feat
-
 
 class SupCEResNet(nn.Module):
     """encoder + classifier"""
@@ -196,14 +220,3 @@ class SupCEResNet(nn.Module):
 
     def forward(self, x):
         return self.fc(self.encoder(x))
-
-
-class LinearClassifier(nn.Module):
-    """Linear classifier"""
-    def __init__(self, name='resnet50', num_classes=10):
-        super(LinearClassifier, self).__init__()
-        _, feat_dim = model_dict[name]
-        self.fc = nn.Linear(feat_dim, num_classes)
-
-    def forward(self, features):
-        return self.fc(features)
