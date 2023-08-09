@@ -6,9 +6,10 @@ import argparse
 import time
 import math
 
-import tensorboard_logger as tb_logger
+# import tensorboard_logger as tb_logger
 import torch
 import torch.backends.cudnn as cudnn
+import requests
 from torchvision import transforms, datasets
 
 from util import TwoCropTransform, AverageMeter
@@ -16,6 +17,9 @@ from util import adjust_learning_rate, warmup_learning_rate
 from util import set_optimizer, save_model
 from networks.resnet_big import SupConResNet
 from losses import SupConLoss
+
+PUSH_MEG = True
+MSG_TOKEN = ""
 
 def parse_option():
     parser = argparse.ArgumentParser('argument for training')
@@ -220,7 +224,7 @@ def main():
     model, criterion = set_model(opt)
     optimizer = set_optimizer(opt, model)
 
-    logger = tb_logger.Logger(logdir=opt.tb_folder, flush_secs=2)
+    # logger = tb_logger.Logger(logdir=opt.tb_folder, flush_secs=2)
 
     for epoch in range(1, opt.epochs + 1):
         adjust_learning_rate(opt, optimizer, epoch)
@@ -232,13 +236,15 @@ def main():
         print('epoch {}, total time {:.2f}'.format(epoch, time2 - time1))
 
         # tensorboard logger
-        logger.log_value('loss', loss, epoch)
-        logger.log_value('learning_rate', optimizer.param_groups[0]['lr'], epoch)
+        # logger.log_value('loss', loss, epoch)
+        # logger.log_value('learning_rate', optimizer.param_groups[0]['lr'], epoch)
 
         if epoch % opt.save_freq == 0:
             save_file = os.path.join(
                 opt.save_folder, 'ckpt_epoch_{epoch}.pth'.format(epoch=epoch))
             save_model(model, optimizer, opt, epoch, save_file)
+            if PUSH_MEG:
+                requests.get("http://www.pushplus.plus/send?token={}&title=TrainingProcess&content=**{} epochs**, **loss = {}**&template=markdown".format(MSG_TOKEN, epoch, str(loss)))
 
     # save the last model
     save_file = os.path.join(
@@ -247,4 +253,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main()    
