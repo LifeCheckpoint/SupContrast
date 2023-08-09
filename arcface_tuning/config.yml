@@ -1,0 +1,20 @@
+metric: "arc_margin"
+loss: "focal_loss"  # ["focal_loss", "cross_entropy_loss"]
+
+model_path: "/path/to/your/model.pth"
+model_features: 192
+
+train_root: "/content/icf"
+saving_path: "/content/checkpoints"
+save_interval: 2
+train_batch_size: 128  # batch size
+
+optimizer: "sgd"  # "sgd" or "Adam"
+num_workers: 8  # workers for loading data
+print_freq: 100  # print info every N batch
+max_epoch: 50
+lr: 0.05  # initial learning rate
+lr_step: 5
+weight_decay: 0.0005
+
+freeze: 10  #freeze ResNet until epoch > freeze

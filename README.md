@@ -142,3 +142,10 @@ and
     year    = {2020},
 }
 ```
+
+## arcface_tuning
+
+1. 通过 `./arcface_training/config.yml` 配置ArcFace训练参数
+    - `train_root` 数据集目录
+    - `checkpoints_path` 指定模型保存位置
+2. 使用 `./arcface_training/train.py` 进行训练
