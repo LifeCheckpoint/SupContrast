@@ -65,22 +65,6 @@ if __name__ == "__main__":
 
     assert os.path.exists(opt["model_path"]), "{} does not exists.".format(opt["model_path"])
     model = FreezeEncoder(torch.load(opt["model_path"]))
-    # if not opt["use_checkpoint"]:
-        # backbone
-        # if opt["backbone"] == "resnet18":
-        #     model = torchvision.models.resnet18(pretrained = opt["pretrained"])
-        # elif opt["backbone"] == "resnet34":
-        #     model = torchvision.models.resnet34(pretrained = opt["pretrained"])
-        # elif opt["backbone"] == "resnet50":
-        #     model = torchvision.models.resnet50(pretrained = opt["pretrained"])
-        # else:
-        #     assert False, "Invaild model: {}".format(opt["backbone"])
-        # model.fc = nn.Linear(model.fc.in_features, 512)
-        # nn.init.xavier_uniform_(model.fc.weight)
-    # else:
-    #     # pth
-    #     assert os.path.exists(opt["checkpoint_path"]), "{} does not exists.".format(opt["checkpoint_path"])
-    #     model = torch.load(opt["checkpoint_path"])
     
     num_classes = get_classes_num(root)
     in_features = opt["model_features"]
