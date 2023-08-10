@@ -28,7 +28,7 @@ def parse_option():
                         help='print frequency')
     parser.add_argument('--save_freq', type=int, default=50,
                         help='save frequency')
-    parser.add_argument('--batch_size', type=int, default=256,
+    parser.add_argument('--batch_size', type=int, default=512,
                         help='batch_size')
     parser.add_argument('--num_workers', type=int, default=8,
                         help='num of workers to use')
@@ -128,11 +128,12 @@ def set_loader(opt):
     train_transform = transforms.Compose([
         transforms.RandomResizedCrop(size = opt.size, scale = (0.2, 1.)),
         transforms.RandomHorizontalFlip(),
-        transforms.RandomRotation(20),
-        transforms.RandomAffine(20),
+        transforms.RandomVerticalFlip(),
+        transforms.RandomRotation(45, p = 0.8),
+        transforms.RandomAffine(30, p = 0.8),
         transforms.RandomApply([
-            transforms.ColorJitter(0.4, 0.1, 0, 0)
-        ], p=0.8),
+            transforms.ColorJitter(0.4, 0.3, 0.1, 0.1)
+        ], p = 0.8),
         transforms.ToTensor(),
         normalize,
     ])
