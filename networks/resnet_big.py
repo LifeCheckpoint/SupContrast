@@ -11,6 +11,7 @@ import torchvision
 
 USE_PRETRAINED_MODEL = True
 PRETRAINED_MODEL = "50"
+FEAT_DIM = 384
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -166,7 +167,7 @@ class LinearClassifier(nn.Module):
 
 class SupConResNet(nn.Module):
     """backbone + projection head"""
-    def __init__(self, name='resnet50', head='mlp', feat_dim=192):
+    def __init__(self, name='resnet50', head='mlp', feat_dim=FEAT_DIM):
         super(SupConResNet, self).__init__()
         model_fun, dim_in = model_dict[name]
         if USE_PRETRAINED_MODEL:
