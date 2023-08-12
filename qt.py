@@ -28,7 +28,7 @@ def calibrate(model, data_loader):
         for image, _ in data_loader:
             model(image)
 
-p_model = prepare_fx(model, qconfig_dict)
+p_model = prepare_fx(model, qconfig_dict, example_inputs = torch.randn(1, 3, 224, 224))
 calibrate(p_model, loader)
 q_model = convert_fx(p_model)
 
