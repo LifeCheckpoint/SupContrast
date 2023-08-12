@@ -16,7 +16,7 @@ qt_transform = transforms.Compose([
 q_config = get_default_qconfig()
 qconfig_dict = {"": q_config}
 
-ds = datasets.ImageFolder(root = ds_path, transfrom = qt_transform)
+ds = datasets.ImageFolder(root = ds_path, transform = qt_transform)
 loader = torch.utils.data.DataLoader(ds, batch_size = 1, num_workers = 4, pin_memory = True, sampler = None)
 
 model = torch.load(model_path)
