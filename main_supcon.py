@@ -131,7 +131,7 @@ def set_loader(opt):
         transforms.RandomResizedCrop(size = opt.size, scale = (0.2, 1.)),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
-        transforms.RandomRotation(45, p = 0.8),
+        transforms.RandomRotation(45),
         transforms.RandomApply([
             transforms.ColorJitter(0.4, 0.3, 0.1, 0.1)
         ], p = 0.8),
@@ -155,10 +155,11 @@ def set_model(opt):
     if torch.cuda.is_available():
         if torch.cuda.device_count() > 1:
             model.encoder = torch.nn.DataParallel(model.encoder)
-        if COMPILE_MODEL:
-            model = torch.compile(model, mode = "reduce-overhead")
         model = model.cuda()
         criterion = criterion.cuda()
+        if COMPILE_MODEL:
+            model = torch.compile(model, mode = "reduce-overhead")
+            criterion = torch.compile(criterion, mode = "reduce-overhead")
         cudnn.benchmark = True
 
     return model, criterion
