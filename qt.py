@@ -17,19 +17,22 @@ q_config = get_default_qconfig()
 qconfig_dict = {"": q_config}
 
 ds = datasets.ImageFolder(root = ds_path, transform = qt_transform)
-loader = torch.utils.data.DataLoader(ds, batch_size = 1, num_workers = 4, pin_memory = True, sampler = None)
+loader = torch.utils.data.DataLoader(ds, batch_size = 16, num_workers = 4, pin_memory = True, sampler = None)
 
 model = torch.load(model_path)
 model.eval()
 
-def calibrate(model, data_loader):
+def calibrate(model, data_loader, num = 256):
     model.eval()
     with torch.no_grad():
+        i = 0
         for image, _ in data_loader:
             model(image)
+            i += 1
+            if i >= num: break
 
-p_model = prepare_fx(model, qconfig_dict, example_inputs = torch.randn(1, 3, 224, 224)).cpu()
+p_model = prepare_fx(model, qconfig_dict, example_inputs = torch.randn(16, 3, 224, 224)).cpu()
 calibrate(p_model, loader)
 q_model = convert_fx(p_model)
 
-torch.save(q_model, model_path + ".qt.pth")
+torch.save(q_model.state_dict(), model_path + ".qt.pth")

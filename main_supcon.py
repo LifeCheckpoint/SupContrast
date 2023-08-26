@@ -18,8 +18,10 @@ from util import set_optimizer, save_model
 from networks.resnet_big import SupConResNet
 from losses import SupConLoss
 
-PUSH_MEG = True
+PUSH_MEG = False
 MSG_TOKEN = ""
+COMPILE_MODEL = True
+
 
 def parse_option():
     parser = argparse.ArgumentParser('argument for training')
@@ -130,7 +132,6 @@ def set_loader(opt):
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         transforms.RandomRotation(45, p = 0.8),
-        transforms.RandomAffine(30, p = 0.8),
         transforms.RandomApply([
             transforms.ColorJitter(0.4, 0.3, 0.1, 0.1)
         ], p = 0.8),
@@ -154,6 +155,8 @@ def set_model(opt):
     if torch.cuda.is_available():
         if torch.cuda.device_count() > 1:
             model.encoder = torch.nn.DataParallel(model.encoder)
+        if COMPILE_MODEL:
+            model = torch.compile(model, mode = "reduce-overhead")
         model = model.cuda()
         criterion = criterion.cuda()
         cudnn.benchmark = True
@@ -186,12 +189,7 @@ def train(train_loader, model, criterion, optimizer, epoch, opt):
         features = model(images)
         f1, f2 = torch.split(features, [bsz, bsz], dim=0)
         features = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim = 1)
-        if opt.method == 'SupCon':
-            loss = criterion(features, labels)
-        elif opt.method == 'SimCLR':
-            loss = criterion(features)
-        else:
-            raise ValueError('contrastive method not supported: {}'.format(opt.method))
+        loss = criterion(features)
 
         # update metric
         losses.update(loss.item(), bsz)
