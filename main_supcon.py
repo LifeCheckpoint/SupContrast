@@ -20,7 +20,7 @@ from losses import SupConLoss
 
 PUSH_MEG = False
 MSG_TOKEN = ""
-COMPILE_MODEL = True
+COMPILE_MODEL = False
 
 
 def parse_option():
@@ -125,25 +125,29 @@ def parse_option():
 
 
 def set_loader(opt):
-    # construct data loader
-    normalize = transforms.Normalize(mean = eval(opt.mean), std = eval(opt.std))
+    normalize = transforms.Normalize(mean=eval(opt.mean), std=eval(opt.std))
+
+    # 定义 ToTensor 操作并将其移到 GPU 上
+    to_tensor = transforms.ToTensor()
+
     train_transform = transforms.Compose([
-        transforms.RandomResizedCrop(size = opt.size, scale = (0.2, 1.)),
+        transforms.RandomResizedCrop(size=opt.size, scale=(0.2, 1.)),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         transforms.RandomRotation(45),
         transforms.RandomApply([
             transforms.ColorJitter(0.4, 0.3, 0.1, 0.1)
-        ], p = 0.8),
-        transforms.ToTensor(),
+        ], p=0.8),
+        to_tensor,  # 使用在 GPU 上定义的 to_tensor 操作
         normalize,
     ])
 
-    train_dataset = datasets.ImageFolder(root = opt.data_folder, transform = TwoCropTransform(train_transform))
+    train_dataset = datasets.ImageFolder(root=opt.data_folder, transform=TwoCropTransform(train_transform))
 
+    # 使用 pin_memory 加速数据传输到 GPU
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size = opt.batch_size, shuffle = True,
-        num_workers = opt.num_workers, pin_memory=True, sampler = None)
+        train_dataset, batch_size=opt.batch_size, shuffle=True,
+        num_workers=opt.num_workers, pin_memory=True, sampler=None)
 
     return train_loader
 
@@ -177,7 +181,10 @@ def train(train_loader, model, criterion, optimizer, epoch, opt):
     for idx, (images, labels) in enumerate(train_loader):
         data_time.update(time.time() - end)
 
-        images = torch.cat([images[0], images[1]], dim=0)
+        # 将图像数据移到 GPU 上
+        images = torch.cat([images[0].cuda(non_blocking=True), images[1].cuda(non_blocking=True)], dim=0)
+        
+        # 以下保持不变
         if torch.cuda.is_available():
             images = images.cuda(non_blocking=True)
             labels = labels.cuda(non_blocking=True)
@@ -254,3 +261,7 @@ def main():
 
 if __name__ == '__main__':
     main()    
+
+"""
+python main_supcon.py --batch_size 2048  --learning_rate 0.5  --temp 0.1 --cosine --data_folder EmojiDataset --mean "(0.5, 0.5, 0.5)" --std "(0.25, 0.25, 0.25)" --method SimCLR --save_freq 25
+"""
